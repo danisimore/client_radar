@@ -1,0 +1,6 @@
+playwright
+beautifulsoup4
+gspread
+pydantic_settings
+pre-commit
+ruff

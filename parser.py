@@ -32,6 +32,13 @@ class Parser:
                 " Юридический адрес ", "span", soup
             )
 
+            director = self.get_company_info_item(" Руководитель ", "span", soup)
+            if not director:
+                managing_organization = self.get_company_info_item(
+                    " Управляющая организация ", "span", soup
+                )
+            company_data["Директор/Компания"] = director or managing_organization
+
             finance_columns_div = soup.find(class_=["finance-columns"])
 
             if finance_columns_div:

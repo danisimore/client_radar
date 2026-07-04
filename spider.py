@@ -16,6 +16,7 @@ HEADERS = [
     "Динамика выручки",
     "Динамика прибыли",
     "Динамика стоимости",
+    "Директор/Компания",
 ]
 """list: The names of of the table."""
 
@@ -28,7 +29,12 @@ class Spider:
     def __init__(self):
         self.chrome_path = spider_config.chrome_path
         self.base_url = spider_config.base_url
-        self.endpoint = input("Введите endpoint компании (напр. /id/1234600000766): ")
+
+        self.endpoint = (
+            input("Введите endpoint компании (напр. /id/1234600000766): ")
+            or "/id/1234600000766"
+        )
+
         self.user_agent = (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
             "AppleWebKit/537.36 (KHTML, like Gecko) "

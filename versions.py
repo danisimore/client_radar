@@ -1,14 +1,20 @@
-VERSION = "0.0.2"
+VERSION = "0.0.3"
 """Application version."""
 
-RELEASE_DATE = "2026-07-04"
+RELEASE_DATE = "2026-07-05"
 """Release date of the version."""
 
 CHANGELOG = {
+    "0.0.3": {
+        "date": "2026-07-05",
+        "changes": [
+            "Added README.md and .example.env",
+        ],
+    },
     "0.0.2": {
         "date": "2026-07-04",
         "changes": [
-            "Added data about director / managing organization ",
+            "Added data about director / managing organization",
         ],
     },
     "0.0.1": {

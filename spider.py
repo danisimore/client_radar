@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import random
+
 from playwright.async_api import async_playwright
 from playwright.async_api import Browser, Page, Playwright
 
@@ -51,17 +53,60 @@ class Spider:
         Returns:
             A list of rows ready to be written to Google Sheets.
         """
+        page_number = 1
+        links = []
         async with async_playwright() as p:
             browser = await self._create_browser(p)
             try:
                 page = await self._create_page(browser)
 
-                await self._open_companies_page(page)
-                links = await self._collect_company_links(page)
+                await self.login(page=page)
 
-                return await self._collect_rows(page, links)
+                await self._open_companies_page(page)
+
+                while page_number:
+                    links.append(await self._collect_company_links(page))
+                    page_number = await self._go_next_page(
+                        page_number=page_number, page=page
+                    )
+                    await self.wait()
+
+                flatten_link_list = [x for sub in links for x in sub]
+                return await self._collect_rows(page, flatten_link_list)
             finally:
                 await browser.close()
+
+    @staticmethod
+    async def wait():
+        """Performs code execution delay to simulate human actions."""
+        await asyncio.sleep(random.uniform(0.8, 2.1))
+
+    async def login(self, page: Page) -> None:
+        """Authorizes the user.
+
+        Args:
+            page (Page): Playwright Browser Page instance
+        """
+        await page.goto(f"{self.base_url}{self.endpoint}")
+        await page.locator("#menu-personal-trigger").click()
+        await self.wait()
+
+        await page.locator("input[name='email']").fill(spider_config.rusprofile_login)
+        await self.wait()
+
+        await page.get_by_text("Продолжить").click()
+        await self.wait()
+
+        await page.locator("#current-password").fill(spider_config.rusprofile_password)
+        await self.wait()
+
+        await page.locator(".btn__content:has-text(' Войти ')").click()
+        await self.wait()
+
+        continue_btn = page.get_by_text(" Продолжить работу ")
+        if await continue_btn.count() > 0:
+            await continue_btn.click()
+            await self.wait()
 
     async def _create_browser(self, playwright: Playwright):
         """Create and configure a Chromium browser instance.
@@ -103,7 +148,7 @@ class Spider:
         and applies the "Юрлица" filter.
 
         Args:
-            page: Browser page.
+            page: Playwright Browser Page instance.
         """
         await page.goto(f"{self.base_url}{self.endpoint}")
         await page.wait_for_selector("[data-tab_name='top_okved_region']")
@@ -136,6 +181,25 @@ class Spider:
         _logger.info("Found %d companies", len(links))
 
         return links
+
+    async def _go_next_page(self, page_number: int, page: Page) -> int | bool:
+        """Opens the next page.
+
+        Args:
+            page_number (int): The number if the page where the parser
+                is currently located.
+            page (Page): Playwright Browser Page instance.
+
+        Returns:
+            int | bool: The number of the page that the parser went to,
+                or False if the page is the last one.
+        """
+        next_page = page.locator(f'.fakelink.to-page[data-target="{page_number + 1}"]')
+        if not await next_page.count():
+            return False
+
+        await next_page.click()
+        return page_number + 1
 
     async def _collect_rows(self, page: Page, links: list[str]) -> list[list[str]]:
         """Collect data rows for all companies.
@@ -171,6 +235,6 @@ class Spider:
         html = await page.content()
         company_data = parser.parse_company(html)
 
-        await asyncio.sleep(0.5)
+        await self.wait()
 
         return [company_data.get(h, "") for h in HEADERS]

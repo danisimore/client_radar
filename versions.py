@@ -1,10 +1,17 @@
-VERSION = "0.0.3"
+VERSION = "0.0.4"
 """Application version."""
 
-RELEASE_DATE = "2026-07-05"
+RELEASE_DATE = "2026-07-06"
 """Release date of the version."""
 
 CHANGELOG = {
+    "0.0.4": {
+        "date": "2026-07-06",
+        "changes": [
+            "Added authorization",
+            "Added collection of company links by pages",
+        ],
+    },
     "0.0.3": {
         "date": "2026-07-05",
         "changes": [

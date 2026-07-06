@@ -6,3 +6,5 @@ class SpiderConfig(BaseConfig):
 
     chrome_path: str
     base_url: str = "https://www.rusprofile.ru"
+    rusprofile_login: str
+    rusprofile_password: str

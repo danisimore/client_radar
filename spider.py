@@ -22,6 +22,15 @@ HEADERS = [
 ]
 """list: The names of of the table."""
 
+OKVED_CODES = [
+    "46.3",
+    "46.4",
+    "46.7",
+    "46.2",
+    "10.",
+]
+"""OKVED company codes suitable for parsing."""
+
 parser = Parser()
 
 
@@ -31,11 +40,6 @@ class Spider:
     def __init__(self):
         self.chrome_path = spider_config.chrome_path
         self.base_url = spider_config.base_url
-
-        self.endpoint = (
-            input("Введите endpoint компании (напр. /id/1234600000766): ")
-            or "/id/1234600000766"
-        )
 
         self.user_agent = (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -62,7 +66,7 @@ class Spider:
 
                 await self.login(page=page)
 
-                await self._open_companies_page(page)
+                await self._open_search_page(page)
 
                 while page_number:
                     links.append(await self._collect_company_links(page))
@@ -87,7 +91,7 @@ class Spider:
         Args:
             page (Page): Playwright Browser Page instance
         """
-        await page.goto(f"{self.base_url}{self.endpoint}")
+        await page.goto(f"{self.base_url}")
         await page.locator("#menu-personal-trigger").click()
         await self.wait()
 
@@ -141,24 +145,57 @@ class Spider:
         )
         return await context.new_page()
 
-    async def _open_companies_page(self, page: Page) -> None:
-        """Open the companies page and select legal entities.
-
-        Navigates to the target page, waits for it to load,
-        and applies the "Юрлица" filter.
+    async def _open_search_page(self, page: Page) -> None:
+        """Opens the page with the filtred companies.
 
         Args:
-            page: Playwright Browser Page instance.
+            page (Page): Playwright Browser Page instance.
         """
-        await page.goto(f"{self.base_url}{self.endpoint}")
-        await page.wait_for_selector("[data-tab_name='top_okved_region']")
+        await page.goto(f"{self.base_url}/search-advanced")
+        await self.apply_filters(page=page)
 
-        await (
-            page.locator("[data-tab_name='top_okved_region']")
-            .get_by_role("button")
-            .click()
-        )
+    async def apply_okved_filters(self, page: Page) -> None:
+        """Applies a filter by type of activity.
+
+        Args:
+            page (Page): Playwright Browser Page instance.
+        """
+        for code in OKVED_CODES:
+            code_integer_part, code_float_part = code.split(".")
+
+            await page.get_by_role("textbox", name="Название или код").fill(code)
+            await page.get_by_role("textbox", name="Название или код").press("Enter")
+
+            if code_float_part:
+                toggle = page.locator(f"[data-code='{code_integer_part}']")
+                await toggle.click(
+                    position={
+                        "x": 10,
+                        "y": 15,
+                    }
+                )
+
+                await page.locator(f'[id="tree-okved-{code}"] + label').click()
+            else:
+                await page.locator(
+                    f'[id="tree-okved-{code_integer_part}"] + label'
+                ).click()
+            await self.wait()
+
+        modal = page.locator("div.modal-pop-wrp.tree-list-wrp.active")
+        done_button = modal.locator("div.btn.btn-blue.modal-pop-close.tree-list-submit")
+        await done_button.click()
+
+    async def apply_filters(self, page: Page) -> None:
+        """Applies the filters to search for ther equired companies.
+
+        Args:
+            page (Page): Playwright Browser Page instance.
+        """
         await page.get_by_text("Юрлица").click()
+        await page.get_by_text("Вид деятельности").click()
+
+        await self.apply_okved_filters(page=page)
 
     async def _collect_company_links(self, page: Page) -> list[str]:
         """Collect links to company pages.

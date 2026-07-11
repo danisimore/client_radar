@@ -5,7 +5,7 @@ import random
 from playwright.async_api import async_playwright
 from playwright.async_api import Browser, Page, Playwright
 
-from config import spider_config
+from config import spider_config, yaml_config
 from parser import Parser
 
 _logger = logging.getLogger("client.radar.logger")
@@ -21,15 +21,6 @@ HEADERS = [
     "Директор/Компания",
 ]
 """list: The names of of the table."""
-
-OKVED_CODES = [
-    "46.3",
-    "46.4",
-    "46.7",
-    "46.2",
-    "10.",
-]
-"""OKVED company codes suitable for parsing."""
 
 parser = Parser()
 
@@ -160,7 +151,7 @@ class Spider:
         Args:
             page (Page): Playwright Browser Page instance.
         """
-        for code in OKVED_CODES:
+        for code in yaml_config.client_radar.filters.okved_codes:
             code_integer_part, code_float_part = code.split(".")
 
             await page.get_by_role("textbox", name="Название или код").fill(code)

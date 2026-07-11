@@ -1,10 +1,16 @@
-VERSION = "0.0.5"
+VERSION = "0.0.6"
 """Application version."""
 
 RELEASE_DATE = "2026-07-11"
 """Release date of the version."""
 
 CHANGELOG = {
+    "0.0.6": {
+        "date": "2026-07-11",
+        "changes": [
+            "Implemented yaml configuration.",
+        ],
+    },
     "0.0.5": {
         "date": "2026-07-11",
         "changes": [

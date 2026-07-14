@@ -1,10 +1,18 @@
-VERSION = "0.0.10"
+VERSION = "0.0.11"
 """Application version."""
 
 RELEASE_DATE = "2026-07-14"
 """Release date of the version."""
 
 CHANGELOG = {
+    "0.0.11": {
+        "date": "2026-07-14",
+        "changes": [
+            "Fixed expanded toggles.",
+            "Fixed passing parameters to methods.",
+            "Implemented the disclosure of contact data lists.",
+        ],
+    },
     "0.0.10": {
         "date": "2026-07-14",
         "changes": [

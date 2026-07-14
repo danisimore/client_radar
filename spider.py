@@ -167,12 +167,14 @@ class Spider:
 
             if code_float_part:
                 toggle = page.locator(f"[data-code='{code_integer_part}']")
-                await toggle.click(
-                    position={
-                        "x": 10,
-                        "y": 15,
-                    }
-                )
+                classes = await toggle.get_attribute("class")
+                if classes and "expanded" not in classes.split():
+                    await toggle.click(
+                        position={
+                            "x": 10,
+                            "y": 15,
+                        }
+                    )
 
                 await page.locator(f'[id="tree-okved-{code}"] + label').click()
             else:
@@ -181,7 +183,7 @@ class Spider:
                 ).click()
             await self.wait()
 
-        await self.close_modal()
+        await self.close_modal(page=page)
 
     async def apply_region_filter(self, page: Page) -> None:
         """Applies a filter by company region.
@@ -196,7 +198,7 @@ class Spider:
             await page.locator(f"//mark[text()='{region}']").click()
             await self.wait()
 
-        await self.close_modal()
+        await self.close_modal(page=page)
 
     async def apply_status_filter(self, page: Page) -> None:
         """Applies a filter by company status.
@@ -392,6 +394,14 @@ class Spider:
         """
         await page.goto(link)
         await page.wait_for_load_state("networkidle")
+
+        contacts_container = page.locator("#contacts-row")
+        buttons = contacts_container.locator("button.all-text-link")
+
+        count = await buttons.count()
+
+        for i in range(count):
+            await buttons.nth(i).click()
 
         html = await page.content()
         company_data = parser.parse_company(html)

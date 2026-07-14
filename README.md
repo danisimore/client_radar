@@ -30,7 +30,8 @@
 	- **TABLE_KEY** нужно скопировать из адресной строки, перейдя в таблицу в браузере (напр. 6J22ZbtU5uzQMs3BvzcstZG6PvdanucZgeQ8J1Z5z5RV)
 4. Создать виртуальное окружение: `python3 -m venv venv`; и активировать его: `source venv/bin/activate`;
 5. Установить python зависимости: `pip install -r requirements.txt`;
-6. Запустить приложение: `python -m main`.
+6. Применить миграции: `alembic upgrade head`;
+7. Запустить приложение: `python -m main`.
 
 ## Roadmap
 - [x] Изменить принцип поиска компаний для сбора данных:

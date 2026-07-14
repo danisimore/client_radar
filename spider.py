@@ -313,8 +313,6 @@ class Spider:
         Args:
             page (Page): Playwright Browser Page instance.
         """
-        await page.get_by_text("Юрлица").click()
-
         await self.apply_okved_filters(page=page)
         await self.apply_region_filter(page=page)
         await self.apply_status_filter(page=page)

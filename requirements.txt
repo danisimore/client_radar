@@ -4,3 +4,5 @@ gspread
 pydantic_settings
 pre-commit
 ruff
+sqlalchemy
+alembic

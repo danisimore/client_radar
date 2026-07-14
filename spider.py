@@ -61,7 +61,7 @@ class Spider:
             try:
                 page = await self._create_page(browser)
 
-                # await self.login(page=page)
+                await self.login(page=page)
 
                 await self._open_search_page(page)
 
@@ -315,12 +315,12 @@ class Spider:
         """
         await page.get_by_text("Юрлица").click()
 
-        # await self.apply_okved_filters(page=page)
-        # await self.apply_region_filter(page=page)
-        # await self.apply_status_filter(page=page)
-        # await self.apply_legal_form_filter(page=page)
-        # await self.apply_revenue_filter(page=page)
-        # await self.apply_contacts_filter(page=page)
+        await self.apply_okved_filters(page=page)
+        await self.apply_region_filter(page=page)
+        await self.apply_status_filter(page=page)
+        await self.apply_legal_form_filter(page=page)
+        await self.apply_revenue_filter(page=page)
+        await self.apply_contacts_filter(page=page)
         await self.apply_employees_number_filter(page=page)
 
     async def _collect_company_links(self, page: Page) -> list[str]:

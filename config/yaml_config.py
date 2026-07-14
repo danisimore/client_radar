@@ -9,14 +9,6 @@ class Range(BaseModel):
     max: int | None = None
 
 
-class Contacts(BaseModel):
-    """Contacts data defined in the YAML configuration."""
-
-    phone: bool = False
-    email: bool = False
-    site: bool = False
-
-
 class Filters(BaseModel):
     """Filter data defined in the YAML configuration."""
 
@@ -24,9 +16,9 @@ class Filters(BaseModel):
     regions: list[str]
     employees_number: Range
     statuses: list[str]
-    legal_form: list[str]
+    legal_forms: list[str]
     revenue: Range
-    contacts: Contacts
+    contacts: list[str]
 
 
 class ClientRadar(BaseModel):

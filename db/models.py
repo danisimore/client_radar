@@ -21,6 +21,7 @@ class Company(Base):
     profit: Mapped[int] = mapped_column(Integer())
     employees_number: Mapped[int] = mapped_column(Integer())
     okved: Mapped[str] = mapped_column(String())
+    address: Mapped[str] = mapped_column(String())
 
 
 class CompanyPhone(Base):

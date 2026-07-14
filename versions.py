@@ -1,14 +1,21 @@
-VERSION = "0.0.9"
+VERSION = "0.0.10"
 """Application version."""
 
 RELEASE_DATE = "2026-07-14"
 """Release date of the version."""
 
 CHANGELOG = {
+    "0.0.10": {
+        "date": "2026-07-14",
+        "changes": [
+            "Added adress field.",
+            "Added new regions to filters.",
+        ],
+    },
     "0.0.9": {
         "date": "2026-07-14",
         "changes": [
-            "Added .",
+            "Initialize database infrastructure.",
         ],
     },
     "0.0.8": {

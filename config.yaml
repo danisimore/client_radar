@@ -8,6 +8,8 @@ client_radar:
       - "10."
     regions:
       - "Курская область"
+      - "Белгородская область"
+      - "Воронежская область"
     employees_number:
       min: 15
       max: null

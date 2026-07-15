@@ -384,16 +384,12 @@ class Spider:
 
         return rows
 
-    async def _parse_company(self, page: Page, link: str) -> list[str]:
+    async def _parse_company(self, page: Page, link: str) -> None:
         """Parse data from a company page.
 
         Args:
             page: Browser page.
             link: Company page URL.
-
-        Returns:
-            A row containing company data ordered according to
-            ``HEADERS``.
         """
         await page.goto(link)
         await page.wait_for_load_state("networkidle")
@@ -414,16 +410,12 @@ class Spider:
             ogrn = self._parser.parse_ogrn(html)
 
             if repo.exists_by_ogrn(ogrn):
-                return []
+                return
 
+            # TODO: implement the creation of a company in the database
             self._parser.parse_company(html)
-
             # repo.create(company)
 
             session.commit()
 
-        company_data = self._parser.parse_company(html)
-
         await self.wait()
-
-        return [company_data.get(h, "") for h in HEADERS]

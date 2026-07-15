@@ -1,6 +1,5 @@
 import logging
 from bs4 import BeautifulSoup
-from bs4.element import Tag
 
 _logger = logging.getLogger("client.radar.logger")
 
@@ -22,59 +21,123 @@ class Parser:
             company_data = {}
 
             header = soup.find("h1", attrs={"itemprop": "name"})
-            company_data["Название"] = self.clean_text(header.text if header else "")
+            company_data["name"] = self.clean_text(header.text if header else "")
 
-            company_data["Основной вид деятельности"] = self.get_company_info_item(
+            company_data["okved"] = self.get_company_info_item(
                 "Основной вид деятельности ", "span", soup
             )
 
-            company_data["Юридический адрес"] = self.get_company_info_item(
+            company_data["address"] = self.get_company_info_item(
                 " Юридический адрес ", "span", soup
             )
 
+            # ------------- Employees -------------
+            employees_data = self.get_company_info_item(
+                " Среднесписочная численность ", "dt", soup
+            )
+
+            employees_number = employees_data.split(" ")[0]
+
+            if employees_number and employees_number.isdigit():
+                company_data["employees_number"] = int(employees_number)
+            else:
+                company_data["employees_number"] = None
+
+            # ------------- Director -------------
             director = self.get_company_info_item(" Руководитель ", "span", soup)
             if not director:
                 managing_organization = self.get_company_info_item(
                     " Управляющая организация ", "span", soup
                 )
-            company_data["Директор/Компания"] = director or managing_organization
+            company_data["director"] = director or managing_organization
 
-            finance_columns_div = soup.find(class_=["finance-columns"])
+            # ------------- Finance -------------
+            company_data["revenue"] = self._parse_finance_value(soup, "tab_revenue")
+            company_data["profit"] = self._parse_finance_value(soup, "tab_profit")
 
-            if finance_columns_div:
-                tab_revenue = finance_columns_div.find(
-                    attrs={"data-tab_name": "tab_revenue"}
-                )
-                if tab_revenue:
-                    nums_div = tab_revenue.find_next_sibling()
-                    if nums_div:
-                        revenue_num = nums_div.find(class_="num")
-                        revenue_num_text = (
-                            revenue_num.find_next_sibling() if revenue_num else None
-                        )
+            # ------------- Contacts -------------
+            company_data["phones"] = self._parse_contact_list(
+                soup,
+                "company-info__contact phone iconer",
+                "telephone",
+            )
 
-                        company_data["Выручка"] = self.clean_text(
-                            (revenue_num.text if revenue_num else "")
-                            + " "
-                            + (revenue_num_text.text if revenue_num_text else "")
-                        )
+            company_data["emails"] = self._parse_contact_list(
+                soup,
+                "company-info__contact mail iconer",
+                "email",
+            )
 
-                        company_data["Динамика выручки"] = self.get_dynamics(
-                            finance_columns_div, "tab_revenue"
-                        )
-
-                company_data["Динамика прибыли"] = self.get_dynamics(
-                    finance_columns_div, "tab_profit"
-                )
-                company_data["Динамика стоимости"] = self.get_dynamics(
-                    finance_columns_div, "tab_value"
-                )
-
-            return company_data
+            company_data["sites"] = self._parse_contact_list(
+                soup,
+                "company-info__contact site iconer",
+                "url",
+            )
 
         except Exception:
             _logger.exception("Ошибка при получении данных о компании!")
             return {}
+
+    def _parse_contact_list(
+        self,
+        soup: BeautifulSoup,
+        container_class: str,
+        itemprop: str,
+    ) -> list[str]:
+        """Parses a list of company contact values.
+
+        Args:
+            soup (BeautifulSoup): Parsed HTML of the company page.
+
+            container_class (str): CSS class of the ``div`` element that
+                contains the target contact links (e.g.
+                ``"company-info__contact phone iconer"``).
+
+            itemprop (str): Value of the ``itemprop`` attribute used to
+                identify the target ``<a>`` elements (e.g. ``"url"`` or
+                ``"email"``).
+
+        Returns:
+            list[str]: A list of extracted contact values. Returns an empty
+                list if the container cannot be found.
+        """
+        container = soup.find(name="div", class_=container_class)
+        if container is None:
+            return []
+
+        return [
+            link.get_text(strip=True)
+            for link in container.find_all(name="a", attrs={"itemprop": itemprop})
+        ]
+
+    def _parse_finance_value(self, soup: BeautifulSoup, tab_name: str) -> str:
+        """ "Parses a financial metric from the company page.
+
+        Args:
+            soup (BeautifulSoup): Parsed HTML of the company page.
+            tab_name (str): Value of the ``data-tab_name`` attribute that
+                identifies the required financial metric (e.g.
+                ``"tab_revenue"`` or ``"tab_profit"``).
+
+        Returns:
+            str: Financial metric formatted as a single string, including
+                both the numeric value and its unit (e.g. ``"1.2 млрд ₽"``).
+                Returns an empty string if the metric cannot be found.
+        """
+        container = soup.select_one(
+            f"div.finance-col:has(div[data-tab_name='{tab_name}'])"
+        )
+
+        if container is None:
+            return ""
+
+        num = container.find("span", class_="num")
+        num_text = container.find("span", class_="num-text")
+
+        if num is None or num_text is None:
+            return ""
+
+        return f"{num.text.strip()} {num_text.text.strip()}"
 
     def parse_ogrn(self, html: str) -> str:
         """Parses company OGRN.
@@ -133,21 +196,4 @@ class Parser:
         if label_element:
             info_item = label_element.find_next_sibling()
             return self.clean_text(info_item.text)
-        return ""
-
-    def get_dynamics(self, finance_columns_div: Tag, tab_name: str) -> str:
-        """Parses profit dynamic,  revenue dynamic and value dynamic.
-
-        Args:
-            finance_columns_div (Tag): div with financial dynamics data.
-            tab_name (str): The name of the tab in the financial dynamics
-                section.
-
-        Returns:
-            str: _description_
-        """
-        tab = finance_columns_div.find(attrs={"data-tab_name": tab_name})
-        if tab:
-            dynamics_span = tab.find_next_sibling().find_next_sibling()
-            return self.clean_text(dynamics_span.text if dynamics_span else "")
         return ""

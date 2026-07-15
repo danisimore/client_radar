@@ -1,9 +1,10 @@
 import asyncio
 import logging
 
+from parser import Parser
+from db.db import SessionLocal
 from spider import Spider
 from sheets_api import SheetsApi
-
 
 logging.basicConfig(
     level=logging.INFO,
@@ -15,7 +16,8 @@ _logger = logging.getLogger("client.radar.logger")
 
 async def main():
     """Collect data using the spider and write the results to Google Sheets."""
-    spider = Spider()
+    parser = Parser()
+    spider = Spider(session_factory=SessionLocal, parser=parser)
     sheets_api = SheetsApi()
 
     rows = await spider.run()

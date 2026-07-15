@@ -22,7 +22,7 @@ class Company(Base):
     employees_number: Mapped[int] = mapped_column(Integer())
     okved: Mapped[str] = mapped_column(String())
     address: Mapped[str] = mapped_column(String())
-    ogrn: Mapped[str] = mapped_column(String(13))
+    ogrn: Mapped[str] = mapped_column(String(13), unique=True)
 
 
 class CompanyPhone(Base):

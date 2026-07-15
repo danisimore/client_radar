@@ -4,7 +4,11 @@ from config import db_config
 
 engine = create_engine(db_config.database_url)
 
-SessionLocal = sessionmaker(bind=engine)
+SessionLocal = sessionmaker(
+    bind=engine,
+    autoflush=False,
+    expire_on_commit=False,
+)
 
 
 class Base(DeclarativeBase):

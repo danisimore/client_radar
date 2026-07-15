@@ -76,6 +76,18 @@ class Parser:
             _logger.exception("Ошибка при получении данных о компании!")
             return {}
 
+    def parse_ogrn(self, html: str) -> str:
+        """Parses company OGRN.
+
+        Args:
+            html (str): HTML markup that needs to be parsed
+
+        Returns:
+            str: company OGRN
+        """
+        soup = BeautifulSoup(html, "html.parser")
+        return soup.find(name="span", id="clip_ogrn").text
+
     def clean_text(self, text: str) -> str:
         """Normalize text by removing extra whitespace.
 

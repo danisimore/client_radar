@@ -1,12 +1,15 @@
 import asyncio
 import logging
 import random
+from collections.abc import Callable
 
 from playwright.async_api import async_playwright
 from playwright.async_api import Browser, Page, Playwright
 
 from config import spider_config, yaml_config
 from parser import Parser
+from repositories.company_repo import CompanyRepo
+from sqlalchemy.orm import Session
 
 _logger = logging.getLogger("client.radar.logger")
 
@@ -28,13 +31,11 @@ LEGAL_FORMS = [
 ]
 """list: Suitable legal forms."""
 
-parser = Parser()
-
 
 class Spider:
     """Object for collecting data from the site."""
 
-    def __init__(self):
+    def __init__(self, session_factory: Callable[[], Session], parser: Parser):
         self.chrome_path = spider_config.chrome_path
         self.base_url = spider_config.base_url
 
@@ -43,6 +44,8 @@ class Spider:
             "AppleWebKit/537.36 (KHTML, like Gecko) "
             "Chrome/138.0.0.0 Safari/537.36"
         )
+        self._session_factory = session_factory
+        self._parser = parser
 
     async def run(self):
         """Run the spider and collect company data.
@@ -404,7 +407,22 @@ class Spider:
             await buttons.nth(i).click()
 
         html = await page.content()
-        company_data = parser.parse_company(html)
+
+        with self._session_factory() as session:
+            repo = CompanyRepo(session)
+
+            ogrn = self._parser.parse_ogrn(html)
+
+            if repo.exists_by_ogrn(ogrn):
+                return []
+
+            self._parser.parse_company(html)
+
+            # repo.create(company)
+
+            session.commit()
+
+        company_data = self._parser.parse_company(html)
 
         await self.wait()
 

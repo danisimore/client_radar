@@ -3,8 +3,7 @@ import logging
 import random
 from collections.abc import Callable
 
-from playwright.async_api import async_playwright
-from playwright.async_api import Browser, Page, Playwright
+from playwright.async_api import async_playwright, Browser, Page, Playwright, Locator
 
 from config import spider_config, yaml_config
 from parser import Parser
@@ -384,6 +383,23 @@ class Spider:
 
         return rows
 
+    async def _expand_all_contacts(self, contacts_container: Locator) -> None:
+        """Expands all hidden contact lists.
+
+        Args:
+            contacts_container (Locator): Locator of the contacts section
+                containing expandable contact lists.
+        """
+        while True:
+            buttons = contacts_container.locator("button.all-text-link")
+            count = await buttons.count()
+
+            if count == 0:
+                break
+
+            for _ in range(count):
+                await buttons.first.evaluate("el => el.click()")
+
     async def _parse_company(self, page: Page, link: str) -> None:
         """Parse data from a company page.
 
@@ -395,12 +411,11 @@ class Spider:
         await page.wait_for_load_state("networkidle")
 
         contacts_container = page.locator("#contacts-row")
-        buttons = contacts_container.locator("button.all-text-link")
-
-        count = await buttons.count()
-
-        for i in range(count):
-            await buttons.nth(i).click()
+        try:
+            await self._expand_all_contacts(contacts_container=contacts_container)
+        except Exception:
+            await page.reload()
+            await self._expand_all_contacts(contacts_container=contacts_container)
 
         html = await page.content()
 
@@ -410,12 +425,18 @@ class Spider:
             ogrn = self._parser.parse_ogrn(html)
 
             if repo.exists_by_ogrn(ogrn):
+                _logger.info("Company already exists in the database, skip")
                 return
 
-            # TODO: implement the creation of a company in the database
-            self._parser.parse_company(html)
-            # repo.create(company)
+            company_data = self._parser.parse_company(html=html, ogrn=ogrn)
+
+            if company_data:
+                try:
+                    repo.create(company_data)
+                    _logger.info("Company was successfully created in the DB!")
+                except Exception:
+                    _logger.exception("Error when trying to create a record in the DB")
 
             session.commit()
 
-        await self.wait()
+        await asyncio.sleep(3)

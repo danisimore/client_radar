@@ -1,35 +1,35 @@
 import logging
 from bs4 import BeautifulSoup
 
+from dto.company_data import CompanyData
+
 _logger = logging.getLogger("client.radar.logger")
 
 
 class Parser:
     """Object for parsing an HTML page."""
 
-    def parse_company(self, html: str) -> dict[str, str]:
+    def parse_company(self, html: str, ogrn: str) -> dict[str, str]:
         """Parses the HTML page collecting the necessary data about company.
 
         Args:
             html (str): HTML markup that needs to be parsed
+            ogrn (str): Company OGRN
 
         Returns:
             dict: Dictionary with the collected company data from the HTML.
         """
         try:
             soup = BeautifulSoup(html, "html.parser")
-            company_data = {}
 
             header = soup.find("h1", attrs={"itemprop": "name"})
-            company_data["name"] = self.clean_text(header.text if header else "")
+            name = self.clean_text(header.text if header else "")
 
-            company_data["okved"] = self.get_company_info_item(
+            okved = self.get_company_info_item(
                 "Основной вид деятельности ", "span", soup
             )
 
-            company_data["address"] = self.get_company_info_item(
-                " Юридический адрес ", "span", soup
-            )
+            address = self.get_company_info_item(" Юридический адрес ", "span", soup)
 
             # ------------- Employees -------------
             employees_data = self.get_company_info_item(
@@ -39,9 +39,9 @@ class Parser:
             employees_number = employees_data.split(" ")[0]
 
             if employees_number and employees_number.isdigit():
-                company_data["employees_number"] = int(employees_number)
+                employees_number = int(employees_number)
             else:
-                company_data["employees_number"] = None
+                employees_number = None
 
             # ------------- Director -------------
             director = self.get_company_info_item(" Руководитель ", "span", soup)
@@ -49,29 +49,42 @@ class Parser:
                 managing_organization = self.get_company_info_item(
                     " Управляющая организация ", "span", soup
                 )
-            company_data["director"] = director or managing_organization
+            director = director or managing_organization
 
             # ------------- Finance -------------
-            company_data["revenue"] = self._parse_finance_value(soup, "tab_revenue")
-            company_data["profit"] = self._parse_finance_value(soup, "tab_profit")
+            revenue = self._parse_finance_value(soup, "tab_revenue")
+            profit = self._parse_finance_value(soup, "tab_profit")
 
             # ------------- Contacts -------------
-            company_data["phones"] = self._parse_contact_list(
+            phones = self._parse_contact_list(
                 soup,
                 "company-info__contact phone iconer",
                 "telephone",
             )
 
-            company_data["emails"] = self._parse_contact_list(
+            emails = self._parse_contact_list(
                 soup,
                 "company-info__contact mail iconer",
                 "email",
             )
 
-            company_data["sites"] = self._parse_contact_list(
+            sites = self._parse_contact_list(
                 soup,
                 "company-info__contact site iconer",
                 "url",
+            )
+            return CompanyData(
+                name=name,
+                ogrn=ogrn,
+                director=director,
+                address=address,
+                revenue=revenue,
+                profit=profit,
+                employees_number=employees_number,
+                phones=phones,
+                emails=emails,
+                sites=sites,
+                okved=okved,
             )
 
         except Exception:
@@ -192,7 +205,15 @@ class Parser:
             str: The normalized value associated with the specified label,
             or an empty string if the label is not found.
         """
-        label_element = soup.find(tag_name, string=company_info_element_text)
+        company_info_element_text = company_info_element_text.strip()
+
+        label_element = soup.find(
+            lambda tag: (
+                tag.name == tag_name
+                and company_info_element_text == tag.get_text(strip=True)
+            )
+        )
+
         if label_element:
             info_item = label_element.find_next_sibling()
             return self.clean_text(info_item.text)

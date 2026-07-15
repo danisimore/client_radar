@@ -222,3 +222,4 @@ credentials.json
 credentials-debug.json
 database.db
 debug/
+.vscode/

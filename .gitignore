@@ -221,5 +221,4 @@ __marimo__/
 credentials.json
 credentials-debug.json
 database.db
-test_model.py
-cleaned_html.txt
+debug/

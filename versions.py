@@ -1,10 +1,17 @@
-VERSION = "0.0.11"
+VERSION = "0.0.12"
 """Application version."""
 
-RELEASE_DATE = "2026-07-14"
+RELEASE_DATE = "2026-07-15"
 """Release date of the version."""
 
 CHANGELOG = {
+    "0.0.12": {
+        "date": "2026-07-15",
+        "changes": [
+            "Added ogrn field.",
+            "Added fields length limitation.",
+        ],
+    },
     "0.0.11": {
         "date": "2026-07-14",
         "changes": [

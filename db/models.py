@@ -10,18 +10,19 @@ class Company(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String())
-    director: Mapped[str] = mapped_column(String())
+    director: Mapped[str] = mapped_column(String(255))
     phones: Mapped[list["CompanyPhone"]] = relationship(
         back_populates="company",
         cascade="all, delete-orphan",
     )
-    email: Mapped[str] = mapped_column(String())
-    site: Mapped[str] = mapped_column(String())
+    email: Mapped[str] = mapped_column(String(255))
+    site: Mapped[str] = mapped_column(String(255))
     revenue: Mapped[int] = mapped_column(Integer())
     profit: Mapped[int] = mapped_column(Integer())
     employees_number: Mapped[int] = mapped_column(Integer())
     okved: Mapped[str] = mapped_column(String())
     address: Mapped[str] = mapped_column(String())
+    ogrn: Mapped[str] = mapped_column(String(13))
 
 
 class CompanyPhone(Base):
